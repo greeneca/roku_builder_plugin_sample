@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   end
   spec.require_paths = ["lib"]
 
-  pec.add_dependency "roku_builder", "~> 4.3"
+  spec.add_dependency "roku_builder", "~> 4.4"
 
   spec.add_development_dependency "bundler", "~> 1.15"
   spec.add_development_dependency "rake", "~> 10.0"
