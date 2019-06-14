@@ -1,16 +1,16 @@
 # coding: utf-8
 lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require "roku_builder_plugin_sample/version"
+require "roku_builder_lazyDebug/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "roku_builder_plugin_sample"
-  spec.version       = RokuBuilderPluginSample::VERSION
+  spec.name          = "roku_builder_lazy_debug"
+  spec.version       = RokuBuilderLazyDebug::VERSION
   spec.authors       = ["Charles Greene"]
   spec.email         = ["charles.greene@redspace.com"]
 
-  spec.summary       = %q{Sample RokuBuilder Plugin}
-  spec.description   = %q{Sample plugin for RokuBuilder to be used as a template}
+  spec.summary       = %q{RokuBuilder Lazy Debug Plugin}
+  spec.description   = %q{Plugin for RokuBuilder to be used as a debugger}
   spec.homepage      = ""
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
