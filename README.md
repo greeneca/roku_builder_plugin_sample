@@ -1,13 +1,12 @@
-# RokuBuilderPluginSample
+# RokuBuilderLazyDebug
 
-This is an example plugin for the roku_builder gem. It is a very basic plugin that just has one command that prints out a log message. It is intended to be used as a template for other plugins.
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'roku_builder_plugin_sample'
+gem 'roku_builder_lazyDebug'
 ```
 
 And then execute:
@@ -16,10 +15,6 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install roku_builder_plugin_sample
+    $ gem install roku_builder_lazeDebug
 
 ## Usage
-
-To run the sample command:
-
-    $ roku --sample
