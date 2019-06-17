@@ -42,53 +42,77 @@ module RokuBuilder
     # Method name must match the key in the commands hash
     def lazy_debug(options:)
       @logger.unknown "Starting LazyDebug"
-      debug_config = read_config()
-      while true
+      @debug_config = read_config()
+      loop do
         begin
           socket = TCPSocket.open(@roku_ip_address, 54333)
           @logger.unknown "Started Connection"
-          while true
-            line = socket.gets
-            if line and not line.empty?
-              @logger.debug "Recieved Line"
-              @logger.debug line
-              data = JSON.parse(line, {symbolize_names: true})
-              case data[:command]
-              when "setBrand"
-                @logger.debug "Set brand: #{data[:value]}"
-                @brand = data[:value].to_sym
-                socket.puts({command: "setBrand", success: true}.to_json)
-              when "getData"
-                @logger.debug "Retreving Data: #{data[:value]}"
-                requested_data = debug_config[data[:value].to_sym]
-                if requested_data
-                  send_data = requested_data[:data].deep_dup
-                  counts = requested_data[:counts]
-                  counts[@brand] ||= 1
-                  write_config(debug_config)
-                  replace_strings(send_data, {brand: @brand, count: counts[@brand]})
-                  socket.puts({command: "getData", success: true, value: send_data}.to_json)
-                else
-                  socket.puts({command: "getData", success: false}.to_json)
-                end
-              when "incrementCount"
-                requested_data = debug_config[data[:value].to_sym]
-                if requested_data
-                  counts = requested_data[:counts]
-                  counts[@brand] ||= 0
-                  counts[@brand] += 1
-                  write_config(debug_config)
-                end
-              else
-                socket.puts({command: data[:command], success: false}.to_json)
-              end
+          monitor = Thread.new {
+            monitor_socket(socket)
+          }
+          monitor.abort_on_exception = true
+          monitor[:timestamp] = Time.now
+          loop do
+            sleep 5
+            if (Time.now - monitor[:timestamp]) > 4
+              raise Errno::ETIMEDOUT
             end
           end
         rescue IOError => e
           @logger.info "IOError #{e.message}"
+          monitor.kill if monitor
         rescue Errno::ECONNRESET => e
           @logger.info "Connection Reset #{e.message}"
+          monitor.kill if monitor
+        rescue Errno::ETIMEDOUT => e
+          @logger.info "Connection Reset #{e.message}"
+          monitor.kill if monitor
         end
+      end
+    end
+
+    def monitor_socket(socket)
+      loop do
+        line = socket.gets
+        if line and not line.empty?
+          @logger.debug "Recieved Line"
+          @logger.debug line
+          data = JSON.parse(line, {symbolize_names: true})
+          handle_data(data, socket)
+        end
+      end
+    end
+    def handle_data(data, socket)
+      case data[:command]
+      when "stayAwake"
+        Thread.current[:timestamp] = Time.now
+      when "setBrand"
+        @logger.debug "Set brand: #{data[:value]}"
+        @brand = data[:value].to_sym
+        socket.puts({command: "setBrand", success: true}.to_json)
+      when "getData"
+        @logger.debug "Retreving Data: #{data[:value]}"
+        requested_data = @debug_config[data[:value].to_sym]
+        if requested_data
+          send_data = requested_data[:data].deep_dup
+          counts = requested_data[:counts]
+          counts[@brand] ||= 1
+          write_config(@debug_config)
+          replace_strings(send_data, {brand: @brand, count: counts[@brand]})
+          socket.puts({command: "getData", success: true, value: send_data}.to_json)
+        else
+          socket.puts({command: "getData", success: false}.to_json)
+        end
+      when "incrementCount"
+        requested_data = @debug_config[data[:value].to_sym]
+        if requested_data
+          counts = requested_data[:counts]
+          counts[@brand] ||= 0
+          counts[@brand] += 1
+          write_config(@debug_config)
+        end
+      else
+        socket.puts({command: data[:command], success: false}.to_json)
       end
     end
     def read_config()
