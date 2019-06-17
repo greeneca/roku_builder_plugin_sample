@@ -64,15 +64,20 @@ module RokuBuilder
                 if requested_data
                   send_data = requested_data[:data].deep_dup
                   counts = requested_data[:counts]
-                  counts[@brand] ||= 0
-                  if data[:increment]
-                    counts[@brand] += 1
-                    write_config(debug_config)
-                  end
+                  counts[@brand] ||= 1
+                  write_config(debug_config)
                   replace_strings(send_data, {brand: @brand, count: counts[@brand]})
                   socket.puts({command: "getData", success: true, value: send_data}.to_json)
                 else
                   socket.puts({command: "getData", success: false}.to_json)
+                end
+              when "incrementCount"
+                requested_data = debug_config[data[:value].to_sym]
+                if requested_data
+                  counts = requested_data[:counts]
+                  counts[@brand] ||= 0
+                  counts[@brand] += 1
+                  write_config(debug_config)
                 end
               else
                 socket.puts({command: data[:command], success: false}.to_json)
