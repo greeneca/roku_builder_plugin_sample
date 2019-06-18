@@ -98,7 +98,9 @@ module RokuBuilder
           counts = requested_data[:counts]
           counts[@brand] ||= 1
           write_config(@debug_config)
+          counts[@brand] += 1 if data[:nextcount]
           replace_strings(send_data, {brand: @brand, count: counts[@brand]})
+          counts[@brand] -= 1 if data[:nextcount]
           socket.puts({command: "getData", success: true, value: send_data}.to_json)
         else
           socket.puts({command: "getData", success: false}.to_json)
