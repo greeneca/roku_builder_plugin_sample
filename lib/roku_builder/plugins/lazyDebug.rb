@@ -14,7 +14,8 @@ module RokuBuilder
     #   with the command
     def self.commands
       {
-        lazy_debug: {device: true, source: false, stage: false},
+        lazy_debug: {device: true},
+        set_debug_values: {device: true, stage: true}
       }
     end
 
@@ -27,11 +28,14 @@ module RokuBuilder
         options[:stage] ||= "core"
         options[:lazy_debug] = true
       end
+      parser.on("--setDebugValues", "Set debug values from json config") do
+        options[:set_debug_values] = true
+      end
     end
 
     # Array of plugins the this plugin depends on
     def self.dependencies
-      []
+      [Linker]
     end
 
     def init
@@ -69,6 +73,25 @@ module RokuBuilder
           monitor.kill if monitor
         end
       end
+    end
+
+    def set_debug_values(options:)
+      unless options[:stage]
+        raise InvalidOptions, "Missing Stage option"
+      end
+      @debug_config = read_config()
+      debug_values = @debug_config[:debugValues]
+      dev_debug_values = @debug_config[:devDebugValues]
+      deeplink_options = []
+      if debug_values
+        deeplink_options.push("debugValuesJson:"+CGI.escape(debug_values.to_json))
+      end
+      if dev_debug_values
+        deeplink_options.push("devDebugValuesJson:"+CGI.escape(dev_debug_values.to_json))
+      end
+      options[:deeplink] = deeplink_options.join(",")
+      puts options[:deeplink]
+      Linker.new(config: @config).deeplink(options: options)
     end
 
     def monitor_socket(socket)
